@@ -1,0 +1,12 @@
+# 原始商店包/逆向产物，不入库
+reference/
+*.zip
+*.crx
+
+# 依赖与运行产物
+helper/.venv/
+node_modules/
+__pycache__/
+*.pyc
+*.log
+.DS_Store
