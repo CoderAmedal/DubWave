@@ -15,7 +15,7 @@ Chrome Web Store 允许扩展与配套软件协作，但审核会关注两点：
 
 | 路线 | 做法 | 上架难度 | 用户体验 |
 |---|---|---|---|
-| A（推荐） | 增加 `chrome.tts` 兜底，helper 不可用时用浏览器内置语音 | 低 | 装完即可用，音质一般 |
+| A（已实现） | `chrome.tts` 兜底，helper 不可用时用浏览器内置语音 | 低 | 装完即可用，音质一般 |
 | B | helper 打包成 native messaging host，另发安装包 | 中（需说明外部依赖） | 音质好，但安装步骤多 |
 | C | 不上架，只发 GitHub Release / Edge 商店 | 无 | 需要手动加载 |
 

@@ -134,6 +134,7 @@
       this.activeIndex = -1;
       this.paused = false;
       this._pending = null; // 正在处理的那一句（保证不并发、不乱序）
+      this.mode = "tts";    // 先按浏览器语音起步；helper 探测通过再切 audio
 
       this.origVolume = video.volume;
       this.origMuted = video.muted;
@@ -160,6 +161,7 @@
       this.muteOriginal();
       this.hideNativeCaptions(true);
       this.bindVideo();
+      this.detectBackend();
       this.loop();
       this.schedulePump(0);
     }
@@ -205,6 +207,7 @@
     onResume() {
       this.paused = false;
       this._pending = null; // 正在处理的那一句（保证不并发、不乱序）
+      this.mode = "tts";    // 先按浏览器语音起步；helper 探测通过再切 audio
       if (this.activeAudio && this.activeAudio.paused && !this.activeAudio.ended) {
         this.activeAudio.play().catch(() => {});
       }
@@ -292,6 +295,27 @@
       if (!sub) return;
       this.activeIndex = i;
       if (this.onCue) this.onCue(sub);
+
+      if (this.mode === "tts") {
+        if (this.activeAudio) this.stopAudio();
+        const slot = this.slotOf(i);
+        const est = estimateSeconds(sub.translation || sub.text || "");
+        const rate = Math.min(2, Math.max(0.6, est / Math.max(0.5, slot)));
+        chrome.runtime.sendMessage(
+          {
+            type: "tts-speak",
+            text: sub.translation || sub.text || "",
+            lang: this.lang || "zh-CN",
+            rate,
+          },
+          (r) => {
+            if (chrome.runtime.lastError) this.log("系统语音失败: " + chrome.runtime.lastError.message);
+            else if (r && !r.ok) this.log("系统语音失败: " + r.error);
+          }
+        );
+        this.lastSpoken = i;
+        return;
+      }
 
       let audio = this.audioMap.get(i);
       if (audio === undefined) {
@@ -383,6 +407,21 @@
       }, 20);
     }
 
+    // helper 不可用时退回浏览器内置语音，保证「装完能用」
+    detectBackend() {
+      chrome.runtime.sendMessage({ type: "ping-helper" }, (r) => {
+        if (chrome.runtime.lastError || !r) return;
+        if (r.ok) {
+          this.mode = "audio";
+          this.log("使用本地 TTS 服务");
+          this.schedulePump(0);
+        } else {
+          this.mode = "tts";
+          this.log(`helper 不可用，使用浏览器内置语音（可用音色 ${r.voices || 0} 个）`);
+        }
+      });
+    }
+
     // 只临时改视频倍速，并把它和我们自己的调整区分开
     applyVideoFactor(factor) {
       if (!this.running) return;
@@ -394,6 +433,9 @@
     }
 
     stopAudio() {
+      if (this.mode === "tts") {
+        chrome.runtime.sendMessage({ type: "tts-stop" });
+      }
       for (const a of this.tails || []) {
         try { a.pause(); } catch {}
       }
@@ -421,7 +463,7 @@
     }
 
     pump() {
-      if (!this.running) return;
+      if (!this.running || this.mode !== "audio") return;
       const limit = Math.min(this.subs.length, this.cursor + AHEAD);
       while (this.workers < PREFETCH && this.fetchNext < limit) {
         const i = this.fetchNext++;

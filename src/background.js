@@ -110,12 +110,40 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       return;
     }
     if (msg.type === "ping-helper") {
+      let helperOk = false;
       try {
         const r = await fetch(cfg.ttsEndpoint.replace(/\/$/, "") + "/health");
-        sendResponse({ ok: r.ok });
+        helperOk = r.ok;
+      } catch (e) {
+        helperOk = false;
+      }
+      // 顺带报告浏览器内置语音是否可用，供 content 决定兜底方式
+      try {
+        chrome.tts.getVoices((voices) => sendResponse({ ok: helperOk, voices: (voices || []).length }));
+      } catch (e) {
+        sendResponse({ ok: helperOk, voices: 0 });
+      }
+      return;
+    }
+
+    if (msg.type === "tts-speak") {
+      try {
+        chrome.tts.stop();
+        chrome.tts.speak(String(msg.text || ""), {
+          lang: msg.lang || cfg.targetLang || "zh-CN",
+          rate: Math.min(2, Math.max(0.6, Number(msg.rate) || 1)),
+          enqueue: false,
+        });
+        sendResponse({ ok: true });
       } catch (e) {
         sendResponse({ ok: false, error: String(e.message || e) });
       }
+      return;
+    }
+
+    if (msg.type === "tts-stop") {
+      try { chrome.tts.stop(); } catch {}
+      sendResponse({ ok: true });
       return;
     }
     sendResponse({ ok: false, error: "unknown message" });

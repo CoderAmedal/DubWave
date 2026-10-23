@@ -327,7 +327,7 @@
     if (token !== runToken) return;
 
     const h = await bg({ type: "ping-helper" });
-    if (!h || !h.ok) toast("本地 TTS 服务未启动：python3 helper/helper.py", 8000);
+    if (!h || !h.ok) toast("未检测到本地 TTS 服务，已切换为浏览器内置语音（音质一般）", 8000);
 
     const { voice } = await chrome.storage.local.get({ voice: "zh-CN-XiaoxiaoNeural" });
     const st = await chrome.storage.local.get({ subMode: "bilingual" });
