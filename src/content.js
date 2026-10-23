@@ -15,10 +15,8 @@
   let lastSub = null;
   let translateTimer = null;
 
-  const ICON_SVG = `<svg class="dubwave-ico" viewBox="0 0 128 128" width="16" height="16" aria-hidden="true">
-    <circle cx="64" cy="64" r="60" fill="#1677FF"/>
-    <path d="M50 35.5 Q46 33 46 39 V89 Q46 95 51 92 L88 69 Q94 65 88 61 Z" fill="#fff"/>
-  </svg>`;
+  // 用扩展自己的图标，避免和工具栏图标不一致
+  const ICON_HTML = `<img class="dubwave-ico" src="${chrome.runtime.getURL("icon/icon32.png")}" width="16" height="16" alt="">`;
 
   const ADAPTER = window.DubWaveAdapter;
   if (!ADAPTER) {
@@ -62,7 +60,7 @@
     btn.id = "dubwave-btn";
     btn.className = "dubwave-btn";
     btn.title = "AI 配音（字幕翻译 + 本地 TTS）";
-    btn.innerHTML = `${ICON_SVG}<span id="dubwave-label">配音</span>`;
+    btn.innerHTML = `${ICON_HTML}<span id="dubwave-label">配音</span>`;
     btn.addEventListener("click", onClick);
 
     const caret = document.createElement("button");

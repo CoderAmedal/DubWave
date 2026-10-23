@@ -76,5 +76,19 @@
       "run_at": "document_start",
       "world": "MAIN"
     }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "icon/icon16.png",
+        "icon/icon32.png",
+        "icon/icon48.png",
+        "icon/icon128.png"
+      ],
+      "matches": [
+        "https://www.youtube.com/*",
+        "https://www.bilibili.com/*"
+      ]
+    }
   ]
 }
