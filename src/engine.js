@@ -6,7 +6,9 @@
 //  3) 所有异步调度都走 setTimeout，不在 finally 里递归，避免主线程自旋。
 (() => {
   const PREFETCH = 3;   // 并发预取数
-  const AHEAD = 6;      // 预取窗口（句）
+  const AHEAD = 6;      // 预取窗口（句，最少）
+  const AHEAD_TIME = 25; // 预取窗口（视频秒），高速播放时按时间而不是句数
+  const AHEAD_MAX = 40;  // 预取窗口上限（句）
   const TICK_MS = 120;  // 推进间隔
   const LATE_SKIP = 2.5;   // 落后超过这么多秒才放弃
   const AUDIO_MAX_RATE = 1.6; // 配音最多提速到 1.6x
@@ -135,6 +137,7 @@
       this.paused = false;
       this._pending = null; // 正在处理的那一句（保证不并发、不乱序）
       this.mode = "tts";    // 先按浏览器语音起步；helper 探测通过再切 audio
+      this.systemVoiceOk = false;
 
       this.origVolume = video.volume;
       this.origMuted = video.muted;
@@ -208,6 +211,7 @@
       this.paused = false;
       this._pending = null; // 正在处理的那一句（保证不并发、不乱序）
       this.mode = "tts";    // 先按浏览器语音起步；helper 探测通过再切 audio
+      this.systemVoiceOk = false;
       if (this.activeAudio && this.activeAudio.paused && !this.activeAudio.ended) {
         this.activeAudio.play().catch(() => {});
       }
@@ -255,6 +259,7 @@
     // ---------- 推进 ----------
     loop() {
       if (!this.running) return;
+      const interval = Math.max(50, TICK_MS / Math.max(1, this.baseRate || 1));
       this.timer = setTimeout(() => {
         try {
           this.tick();
@@ -262,7 +267,7 @@
           this.log("tick 异常: " + e.message);
         }
         this.loop();
-      }, TICK_MS);
+      }, interval);
     }
 
     tick() {
@@ -275,9 +280,10 @@
         const i = this.cursor++;
         const sub = this.subs[i];
         const late = t - sub.start;
+        const lateLimit = LATE_SKIP * Math.max(1, this.baseRate || 1);
         const force = this._freshSeek;
         this._freshSeek = false;
-        if (late > LATE_SKIP && !force) {
+        if (late > lateLimit && !force) {
           this.log(`跳过 #${i}（落后 ${late.toFixed(1)}s）`);
           continue;
         }
@@ -298,35 +304,29 @@
 
       if (this.mode === "tts") {
         if (this.activeAudio) this.stopAudio();
-        const slot = this.slotOf(i);
-        const est = estimateSeconds(sub.translation || sub.text || "");
-        const rate = Math.min(2, Math.max(0.6, est / Math.max(0.5, slot)));
-        chrome.runtime.sendMessage(
-          {
-            type: "tts-speak",
-            text: sub.translation || sub.text || "",
-            lang: this.lang || "zh-CN",
-            rate,
-          },
-          (r) => {
-            if (chrome.runtime.lastError) this.log("系统语音失败: " + chrome.runtime.lastError.message);
-            else if (r && !r.ok) this.log("系统语音失败: " + r.error);
-          }
-        );
+        this.speakSystem(sub.translation || sub.text || "", this.slotOf(i), i);
         this.lastSpoken = i;
         return;
       }
 
       let audio = this.audioMap.get(i);
       if (audio === undefined) {
-        this.log(`未预取，临时拉取 #${i}`);
+        // 关键：高速播放或 TTS 慢时不能在这里等，否则整条时间轴被拖住
+        this.fetchOne(i); // 后台补，下一句可能就用上
+        if (this.systemVoiceOk) {
+          this.speakSystem(sub.translation || sub.text || "", this.slotOf(i), i);
+          this.log(`未就绪，系统语音顶上 #${i}`);
+          return;
+        }
+        this.log(`未预取且无系统语音，临时拉取 #${i}`);
         await this.fetchOne(i);
         audio = this.audioMap.get(i);
       }
       if (!this.running) return; // 期间被停止
       // 预取慢时这里可能已经落后：只要没超过 LATE_SKIP 就补播，别把这句丢掉
       const late = videoTime(this.video) - sub.start;
-      if (late > LATE_SKIP && !force) {
+      const lateLimit = LATE_SKIP * Math.max(1, this.baseRate || 1);
+      if (late > lateLimit && !force) {
         this.log(`#${i} 音频就绪太晚（${late.toFixed(1)}s），跳过`);
         return;
       }
@@ -368,7 +368,7 @@
         const need = remainAudio / remainSlot;
         const fit = Math.min(AUDIO_MAX_RATE, Math.max(1, need));
         audio._fit = fit;
-        audio.playbackRate = Math.min(2.5, base * fit);
+        audio.playbackRate = Math.min(3.4, base * fit);
         // 还可能溢出：把视频放慢，给它腾时间
         const vf = need > AUDIO_MAX_RATE ? Math.max(VIDEO_MIN_RATE, AUDIO_MAX_RATE / need) : 1;
         this.applyVideoFactor(vf);
@@ -411,6 +411,7 @@
     detectBackend() {
       chrome.runtime.sendMessage({ type: "ping-helper" }, (r) => {
         if (chrome.runtime.lastError || !r) return;
+        this.systemVoiceOk = (r.voices || 0) > 0;
         if (r.ok) {
           this.mode = "audio";
           this.log("使用本地 TTS 服务");
@@ -422,10 +423,24 @@
       });
     }
 
+    // 用浏览器内置语音读一句（同步、零等待）
+    speakSystem(text, slot, tag) {
+      const est = estimateSeconds(text);
+      const rate = Math.min(2, Math.max(0.6, est / Math.max(0.5, slot)));
+      chrome.runtime.sendMessage(
+        { type: "tts-speak", text, lang: this.lang || "zh-CN", rate },
+        (r) => {
+          if (chrome.runtime.lastError) this.log(`sys ${tag} 失败: ${chrome.runtime.lastError.message}`);
+          else if (r && !r.ok) this.log(`sys ${tag} 失败: ${r.error}`);
+        }
+      );
+      this.log(`sys #${tag} rate=${rate.toFixed(2)}`);
+    }
+
     // 只临时改视频倍速，并把它和我们自己的调整区分开
     applyVideoFactor(factor) {
       if (!this.running) return;
-      const target = Math.max(VIDEO_MIN_RATE, Math.min(1.999, (this.baseRate || 1) * factor));
+      const target = Math.max(0.5, Math.min(4, (this.baseRate || 1) * factor));
       if (Math.abs((this.video.playbackRate || 1) - target) < 0.01) return;
       this._selfRate = true;
       try { this.video.playbackRate = target; } catch {}
@@ -464,8 +479,16 @@
 
     pump() {
       if (!this.running || this.mode !== "audio") return;
-      const limit = Math.min(this.subs.length, this.cursor + AHEAD);
-      while (this.workers < PREFETCH && this.fetchNext < limit) {
+      // 预取窗口：至少 AHEAD 句，并且覆盖未来 AHEAD_TIME 秒（高速播放时句数会更多）
+      const cur = this.subs[this.cursor];
+      const horizon = (cur ? cur.start : 0) + AHEAD_TIME;
+      let limit = this.cursor;
+      while (limit < this.subs.length && limit - this.cursor < AHEAD_MAX && this.subs[limit].start <= horizon) {
+        limit++;
+      }
+      limit = Math.max(limit, Math.min(this.subs.length, this.cursor + AHEAD));
+      const maxWorkers = Math.min(6, PREFETCH * Math.max(1, Math.ceil(this.baseRate || 1)));
+      while (this.workers < maxWorkers && this.fetchNext < limit) {
         const i = this.fetchNext++;
         if (this.audioMap.has(i)) continue;
         this.workers++;
