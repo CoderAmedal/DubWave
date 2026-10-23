@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">DubWave icon</title>
+  <desc id="desc">A blue-violet play button surrounded by flowing sound-wave contours on a deep purple rounded square.</desc>
+  <defs>
+    <linearGradient id="bg" x1="28" y1="20" x2="492" y2="490" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#260843"/><stop offset="1" stop-color="#080d35"/>
+    </linearGradient>
+    <linearGradient id="wave" x1="137" y1="148" x2="397" y2="371" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8b2cff"/><stop offset=".48" stop-color="#315bff"/><stop offset="1" stop-color="#16c8ff"/>
+    </linearGradient>
+    <linearGradient id="play" x1="223" y1="210" x2="309" y2="310" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#19c8ff"/><stop offset=".5" stop-color="#2867ff"/><stop offset="1" stop-color="#9a20f4"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientTransform="matrix(180 0 0 180 257 256)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#172c8c" stop-opacity=".35"/><stop offset="1" stop-color="#172c8c" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="clip"><rect width="508" height="508" x="2" y="2" rx="100"/></clipPath>
+  </defs>
+  <g clip-path="url(#clip)">
+    <rect x="2" y="2" width="508" height="508" rx="100" fill="url(#bg)"/>
+    <circle cx="256" cy="256" r="190" fill="url(#glow)"/>
+    <g fill="none" stroke="url(#wave)" stroke-linecap="round" opacity=".22">
+      <ellipse cx="256" cy="256" rx="177" ry="177"/><ellipse cx="256" cy="256" rx="169" ry="169"/><ellipse cx="256" cy="256" rx="161" ry="161"/><ellipse cx="256" cy="256" rx="153" ry="153"/><ellipse cx="256" cy="256" rx="145" ry="145"/><ellipse cx="256" cy="256" rx="137" ry="137"/>
+    </g>
+    <g fill="none" stroke="url(#wave)" stroke-width="1.25" stroke-linecap="round">
+      <path d="M256 75 C310 75 340 101 359 142 C374 175 400 180 420 207 C444 240 443 278 420 309 C400 336 376 340 360 373 C340 414 310 437 256 437 C207 437 174 416 155 380 C137 346 143 319 157 289 C172 257 172 238 157 206 C140 170 139 139 160 109 C181 80 218 69 256 75Z"/>
+      <path d="M256 82 C306 82 335 107 352 146 C367 179 394 186 413 211 C434 240 433 276 412 304 C392 330 369 335 353 369 C334 405 306 429 256 429 C211 429 181 409 162 375 C146 344 151 318 165 289 C180 257 180 238 165 207 C149 174 148 143 167 116 C187 88 220 77 256 82Z"/>
+      <path d="M256 89 C301 89 329 113 345 150 C360 183 387 191 405 215 C425 241 423 274 404 300 C385 325 362 331 346 364 C328 398 301 421 256 421 C216 421 188 402 170 370 C155 341 160 316 173 288 C188 257 188 238 173 208 C158 178 157 148 174 123 C193 96 222 85 256 89Z"/>
+      <path d="M256 96 C297 96 323 119 339 154 C353 187 380 196 397 219 C415 242 414 271 396 296 C378 320 355 327 339 359 C322 391 297 413 256 413 C220 413 195 395 178 365 C164 339 169 314 181 287 C196 257 196 238 181 209 C167 182 166 153 181 130 C199 104 225 93 256 96Z"/>
+      <path d="M256 103 C292 103 318 125 332 158 C347 191 373 201 389 222 C406 243 405 269 388 292 C371 316 348 323 332 354 C316 384 292 405 256 405 C224 405 202 388 186 360 C173 336 178 312 189 286 C204 257 204 238 189 210 C176 186 175 158 188 137 C205 112 228 101 256 103Z"/>
+      <path d="M256 110 C288 110 312 131 326 162 C340 195 366 205 381 226 C397 244 396 267 380 288 C364 311 341 319 325 349 C310 377 288 397 256 397 C228 397 209 381 194 355 C182 333 187 310 197 285 C212 257 212 238 197 211 C185 190 184 163 195 144 C211 120 231 109 256 110Z"/>
+      <path d="M256 117 C284 117 306 137 320 166 C333 199 359 210 373 230 C388 246 387 265 372 284 C357 307 334 315 318 344 C304 370 284 389 256 389 C232 389 216 374 202 350 C191 330 196 308 205 284 C220 257 220 238 205 212 C194 194 193 168 202 151 C217 128 234 117 256 117Z"/>
+      <path d="M256 124 C280 124 300 143 313 170 C327 203 352 215 365 234 C379 247 378 264 364 281 C350 302 327 311 311 339 C298 363 280 381 256 381 C236 381 223 367 210 345 C200 327 205 306 213 283 C228 257 228 238 213 213 C203 198 202 173 209 158 C223 136 237 125 256 124Z"/>
+      <path d="M256 131 C276 131 294 149 307 174 C320 207 345 220 357 237 C370 249 369 263 356 277 C342 298 320 307 304 334 C292 356 276 373 256 373 C240 373 230 360 218 340 C209 324 214 304 221 282 C236 257 236 238 221 214 C212 202 211 178 216 165 C229 144 240 133 256 131Z"/>
+      <path d="M256 138 C272 138 288 155 300 178 C313 211 338 225 349 241 C361 250 360 262 348 274 C335 294 313 303 297 329 C286 349 272 365 256 365 C244 365 237 353 226 335 C218 321 223 302 229 281 C244 257 244 238 229 215 C221 206 220 183 223 172 C235 152 243 141 256 138Z"/>
+    </g>
+    <path d="M224 208 C224 201 231 197 238 201 L307 242 C317 248 317 260 307 266 L238 307 C231 311 224 307 224 300Z" fill="url(#play)"/>
+    <path d="M224 208 C224 201 231 197 238 201 L307 242 C317 248 317 260 307 266 L238 307 C231 311 224 307 224 300Z" fill="none" stroke="#7a8cff" stroke-opacity=".25" stroke-width="2"/>
+  </g>
+</svg>
